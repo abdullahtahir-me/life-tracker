@@ -5,7 +5,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 export const metadata: Metadata = {
   title: 'Orbit OS',
   description: 'Personal Command Center',
-  manifest: '/manifest.json',
+  manifest: './manifest.ts',
   
 }
 
