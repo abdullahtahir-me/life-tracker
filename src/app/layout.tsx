@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: 'Orbit OS',
   description: 'Personal Command Center',
   manifest: '/manifest.json',
+  
 }
 
 export const viewport: Viewport = {
