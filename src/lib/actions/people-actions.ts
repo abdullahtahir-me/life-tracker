@@ -68,3 +68,20 @@ export async function updateLastContacted(personId: string) {
   if (error) throw new Error(error.message);
   revalidatePath('/network');
 }
+
+
+// ... keep your existing addPerson and updateLastContacted ...
+
+export async function deletePerson(personId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { error } = await supabase
+    .from('people')
+    .delete()
+    .eq('id', personId)
+    .eq('user_id', user.id);
+
+  if (error) throw new Error(error.message);
+}
