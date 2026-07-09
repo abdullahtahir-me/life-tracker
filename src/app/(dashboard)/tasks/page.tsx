@@ -9,10 +9,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ListChecks, Check, Trash2, CalendarClock, AlertCircle, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useHighlightItem } from '@/hooks/use-highlight' // <-- 1. Import the hook
 
 export default function TasksPage() {
   const { data, isLoading } = useSWR('/api/data/tasks', fetcher)
-
+  useHighlightItem(isLoading);
   if (isLoading) return <div className="flex h-[50vh] items-center justify-center"><Loader2 className="animate-spin text-muted-foreground" /></div>
 
   const tasks = data?.tasks || [];
@@ -95,7 +96,7 @@ export default function TasksPage() {
                 <div className="flex flex-col items-center justify-center p-12 text-muted-foreground"><p>Your task list is empty.</p></div>
               ) : (
                 tasks.map((task: any) => (
-                  <li key={task.id} className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-accent/40">
+                  <li key={task.id} id={task.id}  className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-accent/40">
                     <button onClick={() => handleToggle(task.id, task.is_completed)} className={cn('flex size-5 shrink-0 items-center justify-center rounded-md border', task.is_completed ? 'border-success bg-success text-success-foreground' : 'border-input hover:border-ring')}>
                       {task.is_completed && <Check className="size-3.5" strokeWidth={3} />}
                     </button>

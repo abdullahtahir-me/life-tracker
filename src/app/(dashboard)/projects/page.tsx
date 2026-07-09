@@ -9,10 +9,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { FolderGit2, Trash2, CheckCircle2, Play, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useHighlightItem } from '@/hooks/use-highlight' // <-- 1. Import the hook
 
 export default function ProjectsPage() {
   const { data, isLoading } = useSWR('/api/data/projects', fetcher)
-
+  useHighlightItem(isLoading);
   const handleCreate = async (formData: FormData) => {
     await createProject(formData);
     mutate('/api/data/projects'); 
@@ -86,7 +87,7 @@ export default function ProjectsPage() {
                 const isCompleted = project.status === 'completed';
 
                 return (
-                  <Card key={project.id} className={cn("p-5 flex flex-col transition-all shadow-sm border-border/50", isCompleted ? "opacity-60 grayscale" : "hover:border-primary/50")}>
+                  <Card key={project.id} id={project.id} className={cn("p-5 flex flex-col transition-all shadow-sm border-border/50", isCompleted ? "opacity-60 grayscale" : "hover:border-primary/50")}>
                     <div className="flex items-start justify-between gap-3">
                       <span className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider" style={{ backgroundColor: `${project.domain?.color || '#555'}20`, color: project.domain?.color || '#555' }}>
                         {project.domain?.name || 'Unknown'}

@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Briefcase, Clock, MessageSquare, UserPlus, Loader2, Trash2, Users, Mail, Phone, Check, UserCheck } from 'lucide-react'
 import { useState } from 'react'
+import { useHighlightItem } from '@/hooks/use-highlight' // <-- 1. Import the hook
 
 // --- HELPER FUNCTIONS ---
 
@@ -89,7 +90,7 @@ function TouchBaseButton({ personId, onTouchBase }: { personId: string; onTouchB
 // --- MAIN PAGE COMPONENT ---
 export default function NetworkPage() {
   const { data: network, isLoading } = useSWR('/api/data/network', fetcher)
-
+  useHighlightItem(isLoading);
   const handleCreate = async (formData: FormData) => {
     await addPerson(formData);
     mutate('/api/data/network'); 
@@ -165,7 +166,7 @@ export default function NetworkPage() {
                 const { email, phone } = extractContactInfo(person.context_notes);
 
                 return (
-                  <Card key={person.id} className="p-5 flex flex-col gap-4 transition-colors hover:border-primary/50 shadow-sm border-border/50">
+                  <Card key={person.id} id={person.id} className="p-5 flex flex-col gap-4 transition-colors hover:border-primary/50 shadow-sm border-border/50">
                     
                     {/* Top Section: Avatar & Info */}
                     <div className="flex items-start gap-4 flex-1 min-w-0">
