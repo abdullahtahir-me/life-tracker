@@ -1,40 +1,28 @@
 'use client'
 
 import { createContext, useContext, useState, ReactNode } from 'react'
-import { QuickCapture } from '@/components/layout/quick-capture'
+import useSWR from 'swr'
 
-// 1. Define the Context
+import { QuickCapture } from '@/components/layout/quick-capture'
+import { fetcher } from '@/lib/fetcher'
+import type { Domain } from '@/lib/types/database'
+
 type QuickCaptureContextType = {
   openCapture: () => void;
 }
 
 const QuickCaptureContext = createContext<QuickCaptureContextType>({ openCapture: () => {} })
 
-// 2. Create the Provider Wrapper
 export function QuickCaptureProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false)
-  const [domains, setDomains] = useState([])
-
-  const openCapture = async () => {
-    setIsOpen(true)
-    try {
-      const response = await fetch('/api/domains')
-      if (response.ok) {
-        setDomains(await response.json())
-      }
-    } catch (error) {
-      console.error("Failed to fetch domains", error)
-    }
-  }
+  const { data: domains = [] } = useSWR<Domain[]>('/api/domains', fetcher)
 
   return (
-    <QuickCaptureContext.Provider value={{ openCapture }}>
+    <QuickCaptureContext.Provider value={{ openCapture: () => setIsOpen(true) }}>
       {children}
-      {/* The modal lives here globally now! */}
       <QuickCapture open={isOpen} onClose={() => setIsOpen(false)} domains={domains} />
     </QuickCaptureContext.Provider>
   )
 }
 
-// 3. Create a simple hook to use it
 export const useQuickCapture = () => useContext(QuickCaptureContext)

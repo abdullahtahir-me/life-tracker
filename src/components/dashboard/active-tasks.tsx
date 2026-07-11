@@ -1,25 +1,37 @@
-import { getActiveTasks } from "@/lib/services/tasks";
-import { Card } from "@/components/ui/card";
-import { CheckCircle2, ListChecks } from "lucide-react";
-import { TaskCompleteToggle } from "@/components/dashboard/task-complete-toggle";
-import { format, isToday, isTomorrow, isPast, parseISO } from "date-fns";
+'use client'
 
-// Helper function to make dates look human-readable
+import useSWR from 'swr'
+import { Card } from '@/components/ui/card'
+import { CheckCircle2, ListChecks, Loader2 } from 'lucide-react'
+import { format, isToday, isTomorrow, isPast, parseISO } from 'date-fns'
+
+import { TaskCompleteToggle } from '@/components/dashboard/task-complete-toggle'
+import { fetcher } from '@/lib/fetcher'
+import type { Domain, Project, Task } from '@/lib/types/database'
+
+type TaskWithRelations = Task & {
+  domains?: Pick<Domain, 'name' | 'color'> | null;
+  projects?: Pick<Project, 'name'> | null;
+};
+
+type TasksData = {
+  tasks: TaskWithRelations[];
+};
+
 function formatTaskDate(dateString: string | null) {
-  if (!dateString) return "No date";
-  
-  // Parse the date safely
-  const date = parseISO(dateString);
-  if (isToday(date)) return "Today";
-  if (isTomorrow(date)) return "Tomorrow";
-  if (isPast(date) && !isToday(date)) return "Overdue";
-  
-  // If it's further out, just show the date (e.g., "Jul 10")
-  return format(date, "MMM d");
+  if (!dateString) return 'No date'
+
+  const date = parseISO(dateString)
+  if (isToday(date)) return 'Today'
+  if (isTomorrow(date)) return 'Tomorrow'
+  if (isPast(date) && !isToday(date)) return 'Overdue'
+
+  return format(date, 'MMM d')
 }
 
-export async function ActiveTasks() {
-  const tasks = await getActiveTasks();
+export function ActiveTasks() {
+  const { data, isLoading } = useSWR<TasksData>('/api/data/tasks', fetcher)
+  const tasks = (data?.tasks ?? []).filter((task) => !task.is_completed).slice(0, 10)
 
   return (
     <Card className="p-6">
@@ -33,7 +45,11 @@ export async function ActiveTasks() {
         </span>
       </div>
 
-      {tasks.length === 0 ? (
+      {isLoading ? (
+        <div className="flex h-32 items-center justify-center text-muted-foreground">
+          <Loader2 className="size-5 animate-spin" />
+        </div>
+      ) : tasks.length === 0 ? (
         <div className="flex h-32 flex-col items-center justify-center rounded-lg border border-dashed text-muted-foreground">
           <CheckCircle2 className="mb-2 h-6 w-6 text-success" />
           <p className="text-sm">You&apos;re all caught up!</p>
@@ -41,8 +57,8 @@ export async function ActiveTasks() {
       ) : (
         <ul className="space-y-3">
           {tasks.map((task) => {
-            const dateLabel = formatTaskDate(task.due_date);
-            const isOverdue = dateLabel === "Overdue";
+            const dateLabel = formatTaskDate(task.due_date)
+            const isOverdue = dateLabel === 'Overdue'
 
             return (
               <li
@@ -50,16 +66,15 @@ export async function ActiveTasks() {
                 className="flex items-start gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-accent/40"
               >
                 <TaskCompleteToggle taskId={task.id} isCompleted={task.is_completed} />
-                
+
                 <div className="min-w-0 flex-1">
                   <div className="flex justify-between items-start gap-2">
                     <p className="truncate text-sm font-medium text-card-foreground">
                       {task.title}
                     </p>
-                    {/* The Date Badge */}
                     <span className={`shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-sm ${
-                      isOverdue ? 'bg-destructive/15 text-destructive' : 
-                      dateLabel === 'Today' ? 'bg-warning/15 text-warning' : 
+                      isOverdue ? 'bg-destructive/15 text-destructive' :
+                      dateLabel === 'Today' ? 'bg-warning/15 text-warning' :
                       'text-muted-foreground bg-secondary'
                     }`}>
                       {dateLabel}
@@ -68,7 +83,7 @@ export async function ActiveTasks() {
 
                   <div className="mt-1 flex items-center gap-2 text-xs">
                     {task.domains && (
-                      <span 
+                      <span
                         className="rounded-full px-2 py-0.5 text-[10px] font-medium"
                         style={{ backgroundColor: `${task.domains.color ?? '#64748b'}20`, color: task.domains.color ?? '#64748b' }}
                       >
@@ -77,16 +92,16 @@ export async function ActiveTasks() {
                     )}
                     {task.projects && (
                       <span className="truncate text-muted-foreground">
-                        • {task.projects.name}
+                        - {task.projects.name}
                       </span>
                     )}
                   </div>
                 </div>
               </li>
-            );
+            )
           })}
         </ul>
       )}
     </Card>
-  );
+  )
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { mutate } from "swr";
 import { createDomain, deleteDomain } from "@/lib/actions/domain-actions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,9 @@ export function DomainManager({ domains }: { domains: Domain[] }) {
       // Add the color from our React state into the form data
       formData.append("color", selectedColor);
       await createDomain(formData);
+      mutate("/api/domains");
+      mutate("/api/data/tasks");
+      mutate("/api/data/projects");
     });
   };
 
@@ -35,6 +39,9 @@ export function DomainManager({ domains }: { domains: Domain[] }) {
     if (domainToDelete && deleteConfirmText === domainToDelete.name) {
       startTransition(async () => {
         await deleteDomain(domainToDelete.id);
+        mutate("/api/domains");
+        mutate("/api/data/tasks");
+        mutate("/api/data/projects");
         setDomainToDelete(null);
         setDeleteConfirmText("");
       });

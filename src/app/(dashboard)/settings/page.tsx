@@ -1,21 +1,30 @@
-import { getDomains } from '@/lib/services/domains'
+'use client'
+
+import useSWR from 'swr'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { CalendarDays, Brain, BellDot, RefreshCcw } from 'lucide-react'
+import { CalendarDays, Brain, BellDot, RefreshCcw, Loader2 } from 'lucide-react'
 import { DomainManager } from '@/components/settings/domain-manager'
+import { fetcher } from '@/lib/fetcher'
+import type { Domain } from '@/lib/types/database'
 
-export default async function SettingsPage() {
-  const domains = await getDomains();
+export default function SettingsPage() {
+  const { data: domains = [], isLoading } = useSWR<Domain[]>('/api/domains', fetcher)
 
   return (
     <div className="mx-auto max-w-5xl space-y-10 pb-10">
-      
       <div>
         <h1 className="text-2xl font-bold tracking-tight">System Settings</h1>
         <p className="text-sm text-muted-foreground">Manage your core configuration and external integrations.</p>
       </div>
 
-      <DomainManager domains={domains} />
+      {isLoading ? (
+        <div className="flex h-32 items-center justify-center text-muted-foreground">
+          <Loader2 className="size-5 animate-spin" />
+        </div>
+      ) : (
+        <DomainManager domains={domains} />
+      )}
 
       <div className="space-y-4 pt-6 border-t border-border/50">
         <div>
@@ -25,7 +34,6 @@ export default async function SettingsPage() {
 
         <Card className="border border-border/50 shadow-sm overflow-hidden">
           <div className="divide-y divide-border/50">
-            
             <div className="p-4 flex items-center justify-between hover:bg-secondary/20 transition-colors">
               <div className="flex items-center gap-4">
                 <div className="p-2.5 bg-blue-500/10 text-blue-500 rounded-lg">
@@ -77,11 +85,9 @@ export default async function SettingsPage() {
                 <Button variant="outline" size="sm">Configure</Button>
               </div>
             </div>
-
           </div>
         </Card>
       </div>
-
     </div>
   )
 }

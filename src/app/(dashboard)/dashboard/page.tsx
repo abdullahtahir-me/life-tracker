@@ -2,7 +2,7 @@ import { StatsCards } from "@/components/dashboard/StatsCards";
 import { ActiveTasks } from "@/components/dashboard/active-tasks";
 import { RecentNetwork } from "@/components/dashboard/recent-network";
 
-export default async function DashboardPage() {
+export default function DashboardPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       
@@ -26,3 +26,4 @@ export default async function DashboardPage() {
     </div>
   );
 }
+
