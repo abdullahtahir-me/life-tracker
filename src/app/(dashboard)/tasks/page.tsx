@@ -9,7 +9,19 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ListChecks, Check, Trash2, CalendarClock, AlertCircle, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useHighlightItem } from '@/hooks/use-highlight' // <-- 1. Import the hook
+import { useHighlightItem } from '@/hooks/use-highlight'
+import type { Domain, Project, Task } from '@/lib/types/database'
+
+type TaskWithRelations = Task & {
+  domains?: Pick<Domain, 'name' | 'color'> | null;
+  projects?: Pick<Project, 'name'> | null;
+};
+
+type TasksData = {
+  tasks: TaskWithRelations[];
+  projects: Project[];
+  domains: Domain[];
+};
 
 function getPakistanDateString(date: Date) {
   return date.toLocaleDateString('en-CA', { timeZone: 'Asia/Karachi' });
@@ -25,14 +37,14 @@ function isDueTodayOrTomorrow(dueDate: string | null) {
   return dueDate === getPakistanDateString(today) || dueDate === getPakistanDateString(tomorrow);
 }
 export default function TasksPage() {
-  const { data, isLoading } = useSWR('/api/data/tasks', fetcher)
+  const { data, isLoading } = useSWR<TasksData>('/api/data/tasks', fetcher)
   useHighlightItem(isLoading);
   if (isLoading) return <div className="flex h-[50vh] items-center justify-center"><Loader2 className="animate-spin text-muted-foreground" /></div>
 
-  const tasks = data?.tasks || [];
-  const sortedTasks = [...tasks].sort((a: any, b: any) => Number(a.is_completed) - Number(b.is_completed));
-  const projects = data?.projects || [];
-  const domains = data?.domains || [];
+  const tasks = data?.tasks ?? [];
+  const sortedTasks = [...tasks].sort((a, b) => Number(a.is_completed) - Number(b.is_completed));
+  const projects = data?.projects ?? [];
+  const domains = data?.domains ?? [];
 
   const handleCreate = async (formData: FormData) => {
     await createTask(formData);
@@ -48,7 +60,7 @@ export default function TasksPage() {
       previousData
         ? {
             ...previousData,
-            tasks: previousData.tasks.map((task: any) =>
+            tasks: previousData.tasks.map((task) =>
               task.id === id ? { ...task, is_completed: !status } : task
             ),
           }
@@ -79,7 +91,6 @@ export default function TasksPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Add Task Form */}
         <div className="lg:col-span-1">
           <Card className="p-5 sticky top-24">
             <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
@@ -94,14 +105,14 @@ export default function TasksPage() {
                 <Label className="text-xs">Domain</Label>
                 <select name="domain_id" required className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm">
                   <option value="">Select Domain...</option>
-                  {domains.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  {domains.map((domain) => <option key={domain.id} value={domain.id}>{domain.name}</option>)}
                 </select>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Project (Optional)</Label>
                 <select name="project_id" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm">
                   <option value="">No Project</option>
-                  {projects.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -123,14 +134,13 @@ export default function TasksPage() {
           </Card>
         </div>
 
-        {/* Task List */}
         <div className="lg:col-span-2">
           <Card className="overflow-hidden">
             <ul className="divide-y divide-border">
               {sortedTasks.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-12 text-muted-foreground"><p>Your task list is empty.</p></div>
               ) : (
-                sortedTasks.map((task: any) => {
+                sortedTasks.map((task) => {
                   const showPriorityAlert = !task.is_completed && isDueTodayOrTomorrow(task.due_date);
 
                   return (
@@ -141,7 +151,7 @@ export default function TasksPage() {
                     <div className="min-w-0 flex-1">
                       <p className={cn('truncate text-sm font-medium', task.is_completed ? 'text-muted-foreground line-through' : 'text-card-foreground')}>{task.title}</p>
                       <div className="mt-1 flex items-center gap-2 text-[10px]">
-                        {task.domains && <span className="rounded-full px-2 py-0.5" style={{ backgroundColor: `${task.domains.color}20`, color: task.domains.color }}>{task.domains.name}</span>}
+                        {task.domains && <span className="rounded-full px-2 py-0.5" style={{ backgroundColor: `${task.domains.color ?? '#64748b'}20`, color: task.domains.color ?? '#64748b' }}>{task.domains.name}</span>}
                         {task.projects && <span className="text-muted-foreground">- {task.projects.name}</span>}
                         {task.due_date && <span className="flex items-center gap-1 text-muted-foreground"><CalendarClock className="size-3" /> {new Date(task.due_date).toLocaleDateString()}</span>}
                       </div>

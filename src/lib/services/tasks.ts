@@ -1,5 +1,5 @@
 import { createClient } from "@/utils/supabase/server";
-import { Task, TaskPriority } from "@/lib/types/database";
+import { Domain, Project, Task, TaskPriority } from "@/lib/types/database";
 
 const priorityRank: Record<TaskPriority, number> = {
   high: 0,
@@ -11,18 +11,16 @@ function sortByPriority<T extends { priority: TaskPriority }>(tasks: T[]): T[] {
   return [...tasks].sort((a, b) => priorityRank[a.priority] - priorityRank[b.priority]);
 }
 
-type TaskWithRelations = Task & {
-  domains?: { name: string; color: string | null } | null;
-  projects?: { name: string } | null;
+export type TaskWithRelations = Task & {
+  domains?: Pick<Domain, 'name' | 'color'> | null;
+  projects?: Pick<Project, 'name'> | null;
 };
 
-// --- Function 1: Get ALL tasks (Used by the Tasks page API) ---
-export async function getTasks(): Promise<Task[]> {
+export async function getTasks(): Promise<TaskWithRelations[]> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
-  // Fetch tasks and join project & domain info
   const { data, error } = await supabase
     .from('tasks')
     .select(`
@@ -37,16 +35,14 @@ export async function getTasks(): Promise<Task[]> {
     return [];
   }
 
-  return data as any[];
+  return (data ?? []) as TaskWithRelations[];
 }
 
-// --- Function 2: Get ONLY tasks due today (Used by the Dashboard) ---
 export async function getTodaysTasks() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
-  // Get today's date in YYYY-MM-DD format based on Pakistan Standard Time
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Karachi' });
 
   const { data, error } = await supabase
@@ -58,7 +54,7 @@ export async function getTodaysTasks() {
     `)
     .eq('user_id', user.id)
     .eq('due_date', today)
-    .eq('is_completed', false); // Only show things we haven't done yet!
+    .eq('is_completed', false);
 
   if (error) {
     console.error("Error fetching today's tasks:", error.message);
@@ -68,8 +64,7 @@ export async function getTodaysTasks() {
   return sortByPriority(data as TaskWithRelations[]);
 }
 
-// --- Function 3: Get Active Tasks (Overdue, Today, and Upcoming) ---
-export async function getActiveTasks() {
+export async function getActiveTasks(): Promise<TaskWithRelations[]> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
@@ -82,14 +77,14 @@ export async function getActiveTasks() {
       projects (name)
     `)
     .eq('user_id', user.id)
-    .eq('is_completed', false) // Only show unfinished tasks
-    .order('due_date', { ascending: true, nullsFirst: false }) // Earliest due dates first!
-    .limit(10); // Show up to 10 tasks on the dashboard
+    .eq('is_completed', false)
+    .order('due_date', { ascending: true, nullsFirst: false })
+    .limit(10);
 
   if (error) {
     console.error("Error fetching active tasks:", error.message);
     return [];
   }
 
-  return data as any[];
+  return (data ?? []) as TaskWithRelations[];
 }

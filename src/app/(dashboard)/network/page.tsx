@@ -9,12 +9,16 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Briefcase, Clock, MessageSquare, UserPlus, Loader2, Trash2, Users, Mail, Phone, Check, UserCheck } from 'lucide-react'
 import { useState } from 'react'
-import { useHighlightItem } from '@/hooks/use-highlight' // <-- 1. Import the hook
+import { useHighlightItem } from '@/hooks/use-highlight'
+import type { Person } from '@/lib/types/database'
 
-// --- HELPER FUNCTIONS ---
+type NetworkPerson = Person & {
+  context_notes: string | null;
+  last_contacted: string | null;
+};
 
 function getInitials(name: string) {
-  return name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+  return name.split(' ').map((word) => word[0]).join('').substring(0, 2).toUpperCase();
 }
 
 function extractContactInfo(text: string | null) {
@@ -32,7 +36,6 @@ function extractContactInfo(text: string | null) {
   };
 }
 
-// --- SUB-COMPONENT 1: Smart Copy Button ---
 function SmartCopyButton({ text, type }: { text: string; type: 'email' | 'phone' }) {
   const [copied, setCopied] = useState(false);
 
@@ -58,18 +61,14 @@ function SmartCopyButton({ text, type }: { text: string; type: 'email' | 'phone'
   );
 }
 
-// --- SUB-COMPONENT 2: Smart Touch Base Button ---
 function TouchBaseButton({ personId, onTouchBase }: { personId: string; onTouchBase: (id: string) => Promise<void> }) {
   const [justTouched, setJustTouched] = useState(false);
 
   const handleClick = async () => {
-    // Show the green checkmark immediately for instant feedback
     setJustTouched(true);
     
-    // Perform the database update in the background
     await onTouchBase(personId);
     
-    // Revert back to the normal icon after 2 seconds
     setTimeout(() => setJustTouched(false), 2000);
   };
 
@@ -87,16 +86,14 @@ function TouchBaseButton({ personId, onTouchBase }: { personId: string; onTouchB
   );
 }
 
-// --- MAIN PAGE COMPONENT ---
 export default function NetworkPage() {
-  const { data: network, isLoading } = useSWR('/api/data/network', fetcher)
+  const { data: network, isLoading } = useSWR<NetworkPerson[]>('/api/data/network', fetcher)
   useHighlightItem(isLoading);
   const handleCreate = async (formData: FormData) => {
     await addPerson(formData);
     mutate('/api/data/network'); 
   }
 
-  // We pass this function down to our new TouchBaseButton
   const handleTouchBase = async (id: string) => {
     await updateLastContacted(id);
     mutate('/api/data/network'); 
@@ -111,14 +108,13 @@ export default function NetworkPage() {
 
   if (isLoading) return <div className="flex h-[50vh] items-center justify-center"><Loader2 className="animate-spin text-muted-foreground" /></div>
 
-  const people = network || [];
+  const people = network ?? [];
 
   return (
     <div className="mx-auto max-w-6xl animate-in fade-in duration-300 pt-2">
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         
-        {/* LEFT COLUMN: Fixed Header + Add Form */}
         <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-24">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Network</h1>
@@ -153,7 +149,6 @@ export default function NetworkPage() {
           </Card>
         </div>
 
-        {/* RIGHT COLUMN: Full-width Stacked Contact Cards */}
         <div className="lg:col-span-2 space-y-4">
           {people.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 border border-dashed rounded-xl text-muted-foreground">
@@ -162,13 +157,12 @@ export default function NetworkPage() {
             </div>
           ) : (
             <div className="flex flex-col gap-4">
-              {people.map((person: any) => {
+              {people.map((person) => {
                 const { email, phone } = extractContactInfo(person.context_notes);
 
                 return (
                   <Card key={person.id} id={person.id} className="p-5 flex flex-col gap-4 transition-colors hover:border-primary/50 shadow-sm border-border/50">
                     
-                    {/* Top Section: Avatar & Info */}
                     <div className="flex items-start gap-4 flex-1 min-w-0">
                       <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary mt-1">
                         {getInitials(person.name)}
@@ -186,7 +180,6 @@ export default function NetworkPage() {
                       </div>
                     </div>
 
-                    {/* Middle Section: Notes */}
                     {person.context_notes && (
                       <div className="bg-secondary/20 rounded-md p-3 border border-border/30 ml-16">
                         <p className="flex gap-2 text-sm text-muted-foreground">
@@ -196,21 +189,17 @@ export default function NetworkPage() {
                       </div>
                     )}
 
-                    {/* Bottom Section: Footer with Date and Horizontal Buttons */}
                     <div className="flex items-center justify-between border-t border-border/50 pt-3 mt-1">
                       
-                      {/* Left side of footer: Date */}
                       <p className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                         <Clock className="size-3.5" />
                         Last contacted: {person.last_contacted ? new Date(person.last_contacted).toLocaleDateString() : 'Never'}
                       </p>
 
-                      {/* Right side of footer: Action Buttons */}
                       <div className="flex items-center gap-1.5 shrink-0">
                         {phone && <SmartCopyButton text={phone} type="phone" />}
                         {email && <SmartCopyButton text={email} type="email" />}
 
-                        {/* --- THIS IS THE UPDATED BUTTON --- */}
                         <TouchBaseButton personId={person.id} onTouchBase={handleTouchBase} />
 
                         <Button 

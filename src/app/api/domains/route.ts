@@ -6,7 +6,7 @@ export async function GET() {
     // We just call the service we already wrote!
     const domains = await getDomains();
     return NextResponse.json(domains, { status: 200 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to fetch domains" }, { status: 500 });
   }
 }

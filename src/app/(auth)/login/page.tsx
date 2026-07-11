@@ -1,6 +1,5 @@
 'use client'
 
-import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { login } from './actions'
 import { Orbit, Loader2, LockKeyhole } from 'lucide-react'
@@ -29,10 +28,8 @@ function LoginForm() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      {/* The Bento-box style card */}
       <div className="w-full max-w-sm rounded-xl border border-border bg-card p-8 shadow-2xl">
         
-        {/* Header / Logo */}
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
           <span className="flex size-12 items-center justify-center rounded-xl bg-primary/15 text-primary">
             <Orbit className="size-7" />
@@ -47,7 +44,6 @@ function LoginForm() {
           </div>
         </div>
 
-        {/* The Form */}
         <form action={login} className="flex flex-col gap-4">
           <div className="space-y-1.5">
             <label htmlFor="email" className="text-xs font-medium text-card-foreground">
@@ -77,7 +73,6 @@ function LoginForm() {
             />
           </div>
 
-          {/* Error Message Display */}
           {error && (
             <div className="mt-2 rounded-lg bg-destructive/15 p-3 text-center text-xs font-medium text-destructive">
               {error}
@@ -93,7 +88,6 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    // We wrap the form in Suspense because we are using useSearchParams()
     <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-background"><Loader2 className="size-6 animate-spin text-primary" /></div>}>
       <LoginForm />
     </Suspense>
