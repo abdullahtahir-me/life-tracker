@@ -1,76 +1,77 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import * as ics from 'ics';
 
-// IMPORTANT: We use the standard supabase-js client here, NOT the server/cookie one, 
-// because Apple/Google servers don't have your login cookies.
-// We are bypassing RLS using the Service Role Key just for this specific, token-protected route.
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!; // You need to add this to your .env from Supabase!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+// Helper to get the current time in the exact format calendars require
+const getIcsTimestamp = () => new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const token = searchParams.get("token");
 
-  // 1. SECURITY CHECK: Verify the token in the URL matches your env variable
   if (token !== process.env.CALENDAR_SYNC_TOKEN) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
-  const events: ics.EventAttributes[] = [];
 
-  // 2. FETCH UPCOMING TASKS
-  // Get today's date in YYYY-MM-DD format (Pakistan Time)
+  // 1. FETCH UPCOMING TASKS
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Karachi' });
-
-  // Fetch tasks that are incomplete AND due today or in the future
   const { data: tasks, error: tasksError } = await supabase
     .from("tasks")
-    .select("id, title, due_date") // Add 'description' if you added that column to your DB
+    .select("id, title, due_date")
     .eq("is_completed", false)
-    .gte("due_date", today);   // 'gte' means Greater Than or Equal To today
+    .gte("due_date", today);
 
   if (tasksError) {
-    console.error("Error fetching tasks for calendar:", tasksError);
+    console.error("Error fetching tasks:", tasksError);
+    return new NextResponse("Error fetching tasks", { status: 500 });
   }
+
+  // 2. MANUALLY BUILD THE .ICS STRING (No 3rd party bugs!)
+  let icsString = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Orbit OS//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'X-PUBLISHED-TTL:PT1H'
+  ].join('\r\n') + '\r\n';
 
   if (tasks) {
     tasks.forEach((task) => {
-      // Split "YYYY-MM-DD" into an array of numbers: [YYYY, MM, DD]
-      const [year, month, day] = task.due_date.split("-").map(Number);
+      // Format start date (remove hyphens)
+      const startStr = task.due_date.replace(/-/g, '');
       
-      events.push({
-        uid: task.id, // 1. CRITICAL: Tells Google/Apple this is the same specific task
-        title: `[Task] ${task.title}`,
-        start: [year, month, day],
-        // 2. THE FIX: Remove the 'end' array and use a specific 'duration'
-        duration: { days: 1 }, 
-        status: 'CONFIRMED',
-      });
+      // Calculate exactly 1 day later for the exclusive end date
+      const [year, month, day] = task.due_date.split("-").map(Number);
+      const endDate = new Date(year, month - 1, day + 1);
+      const endStr = endDate.toISOString().split('T')[0].replace(/-/g, '');
+
+      // Append the event text
+      icsString += [
+        'BEGIN:VEVENT',
+        `UID:${task.id}`,
+        `SUMMARY:[Task] ${task.title}`,
+        `DTSTAMP:${getIcsTimestamp()}`,
+        `DTSTART;VALUE=DATE:${startStr}`,    // E.g., 20260711
+        `DTEND;VALUE=DATE:${endStr}`,        // E.g., 20260712
+        'STATUS:CONFIRMED',
+        'END:VEVENT'
+      ].join('\r\n') + '\r\n';
     });
   }
 
-  // 3. FETCH SCHEDULES
-  // Note: To make schedules recurring weekly, we would add recurrence rules (RRULE).
-  // For simplicity, we can fetch all class schedules and map them to their next occurrence.
-  // (You would add your class_schedules fetching logic here).
+  icsString += 'END:VCALENDAR';
 
-  // 4. GENERATE THE .ICS FILE
-  const { error, value } = ics.createEvents(events);
-
-  if (error || !value) {
-    console.error(error);
-    return new NextResponse("Error generating calendar", { status: 500 });
-  }
-
-  // 5. RETURN THE FILE WITH CORRECT HEADERS
-  // The 'text/calendar' content type tells the phone/browser "This is a calendar subscription!"
-  return new NextResponse(value, {
+  // 3. RETURN THE FILE
+  return new NextResponse(icsString, {
     status: 200,
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
-      "Content-Disposition": 'attachment; filename="life_os.ics"',
+      "Content-Disposition": 'attachment; filename="orbit_schedule.ics"',
     },
   });
 }
