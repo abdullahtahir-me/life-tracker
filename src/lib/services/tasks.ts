@@ -16,7 +16,7 @@ type TaskWithRelations = Task & {
   projects?: { name: string } | null;
 };
 
-// --- Function 1: Get ALL tasks (Used by the /test playground) ---
+// --- Function 1: Get ALL tasks (Used by the Tasks page API) ---
 export async function getTasks(): Promise<Task[]> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -67,7 +67,6 @@ export async function getTodaysTasks() {
 
   return sortByPriority(data as TaskWithRelations[]);
 }
-// ... keep your existing getTasks and getTodaysTasks functions ...
 
 // --- Function 3: Get Active Tasks (Overdue, Today, and Upcoming) ---
 export async function getActiveTasks() {

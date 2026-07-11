@@ -31,7 +31,9 @@ export async function createTask(formData: FormData) {
   });
 
   if (error) throw new Error(error.message);
-  revalidatePath('/test');
+  revalidatePath('/tasks');
+  revalidatePath('/dashboard');
+  revalidatePath('/projects');
 }
 
 // Special action just for checking off a task!
@@ -52,7 +54,6 @@ export async function toggleTaskComplete(id: string, currentStatus: boolean) {
 }
 
 
-// Inside src/lib/actions/task-actions.ts
 
 export async function quickCreateTask(formData: FormData) {
   const supabase = await createClient();
@@ -79,7 +80,6 @@ export async function quickCreateTask(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath('/', 'layout');
 }
-// ... existing createTask and toggleTaskComplete functions ...
 
 export async function deleteTask(id: string) {
   const supabase = await createClient();

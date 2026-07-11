@@ -21,7 +21,8 @@ export async function createProject(formData: FormData) {
   });
 
   if (error) throw new Error(error.message);
-  revalidatePath('/test'); // We will test this on a /test page
+  revalidatePath('/projects');
+  revalidatePath('/dashboard');
 }
 
 export async function deleteProject(id: string) {
@@ -31,11 +32,11 @@ export async function deleteProject(id: string) {
 
   const { error } = await supabase.from('projects').delete().eq('id', id).eq('user_id', user.id);
   if (error) throw new Error(error.message);
-  
-  revalidatePath('/test');
+
+  revalidatePath('/projects');
+  revalidatePath('/dashboard');
 }
 
-// ... keep your existing createProject and deleteProject functions ...
 
 export async function updateProjectStatus(projectId: string, newStatus: string) {
   const supabase = await createClient();
