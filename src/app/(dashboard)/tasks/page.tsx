@@ -49,7 +49,8 @@ export default function TasksPage() {
   const handleCreate = async (formData: FormData) => {
     await createTask(formData);
     mutate('/api/data/tasks');
-    mutate('/api/data/projects'); // Also update projects in background to fix progress bars!
+    mutate('/api/data/projects');
+    mutate('/api/dashboard/stats');
   }
 
   const handleToggle = async (id: string, status: boolean) => {
@@ -72,6 +73,7 @@ export default function TasksPage() {
       await toggleTaskComplete(id, status);
       mutate('/api/data/tasks');
       mutate('/api/data/projects');
+      mutate('/api/dashboard/stats');
     } catch (error) {
       mutate('/api/data/tasks', previousData, false);
       console.error('Failed to toggle task:', error);
@@ -81,18 +83,19 @@ export default function TasksPage() {
   const handleDelete = async (id: string) => {
     await deleteTask(id);
     mutate('/api/data/tasks');
+    mutate('/api/dashboard/stats');
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 animate-in fade-in duration-300">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Master Task List</h1>
-        <p className="text-sm text-muted-foreground">Everything on your plate across all domains.</p>
-      </div>
+    <div className="mx-auto max-w-6xl animate-in fade-in duration-300 pt-2">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-24">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Master Task List</h1>
+            <p className="text-sm text-muted-foreground">Everything on your plate across all domains.</p>
+          </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
-          <Card className="p-5 sticky top-24">
+          <Card className="p-5 shadow-sm border-border/50">
             <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
               <ListChecks className="h-4 w-4 text-primary" /> New Task
             </h2>

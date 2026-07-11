@@ -10,8 +10,17 @@ import { Label } from '@/components/ui/label'
 import { FolderGit2, Trash2, CheckCircle2, Play, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useHighlightItem } from '@/hooks/use-highlight'
-import type { Domain } from '@/lib/types/database'
-import type { ProjectWithStats } from '@/lib/services/projects'
+import type { Domain, Project } from '@/lib/types/database'
+
+type ProjectWithStats = Project & {
+  domain: { name: string; color: string | null } | null;
+  status?: string | null;
+  stats: {
+    totalTasks: number;
+    completedTasks: number;
+    progressPercentage: number;
+  };
+};
 
 type ProjectsData = {
   projects: ProjectWithStats[];
@@ -32,7 +41,6 @@ export default function ProjectsPage() {
   }
 
   const handleDelete = async (id: string) => {
-    // Optional: Add a standard window.confirm here for safety
     if (window.confirm("Are you sure you want to delete this project? All tasks inside will be lost.")) {
       await deleteProject(id);
       mutate('/api/data/projects');

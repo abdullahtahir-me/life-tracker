@@ -30,6 +30,7 @@ export function TaskCompleteToggle({
         await toggleTaskComplete(taskId, checked);
         mutate("/api/data/tasks");
         mutate("/api/data/projects");
+        mutate("/api/dashboard/stats");
         router.refresh();
       } catch (error) {
         setChecked(checked);
