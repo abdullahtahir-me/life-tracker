@@ -1,5 +1,20 @@
 import { createClient } from "@/utils/supabase/server";
-import { Task } from "@/lib/types/database";
+import { Task, TaskPriority } from "@/lib/types/database";
+
+const priorityRank: Record<TaskPriority, number> = {
+  high: 0,
+  medium: 1,
+  low: 2,
+};
+
+function sortByPriority<T extends { priority: TaskPriority }>(tasks: T[]): T[] {
+  return [...tasks].sort((a, b) => priorityRank[a.priority] - priorityRank[b.priority]);
+}
+
+type TaskWithRelations = Task & {
+  domains?: { name: string; color: string | null } | null;
+  projects?: { name: string } | null;
+};
 
 // --- Function 1: Get ALL tasks (Used by the /test playground) ---
 export async function getTasks(): Promise<Task[]> {
@@ -22,7 +37,7 @@ export async function getTasks(): Promise<Task[]> {
     return [];
   }
 
-  return data as any[]; 
+  return data as any[];
 }
 
 // --- Function 2: Get ONLY tasks due today (Used by the Dashboard) ---
@@ -43,15 +58,14 @@ export async function getTodaysTasks() {
     `)
     .eq('user_id', user.id)
     .eq('due_date', today)
-    .eq('is_completed', false) // Only show things we haven't done yet!
-    .order('priority', { ascending: true }); 
+    .eq('is_completed', false); // Only show things we haven't done yet!
 
   if (error) {
     console.error("Error fetching today's tasks:", error.message);
     return [];
   }
 
-  return data as any[]; 
+  return sortByPriority(data as TaskWithRelations[]);
 }
 // ... keep your existing getTasks and getTodaysTasks functions ...
 
@@ -78,5 +92,5 @@ export async function getActiveTasks() {
     return [];
   }
 
-  return data as any[]; 
+  return data as any[];
 }

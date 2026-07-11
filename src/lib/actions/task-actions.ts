@@ -2,6 +2,11 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import type { TaskPriority } from "@/lib/types/database";
+
+function parseTaskPriority(value: FormDataEntryValue | null): TaskPriority {
+  return value === "low" || value === "medium" || value === "high" ? value : "medium";
+}
 
 export async function createTask(formData: FormData) {
   const supabase = await createClient();
@@ -12,6 +17,7 @@ export async function createTask(formData: FormData) {
   const domain_id = formData.get('domain_id') as string;
   const project_id = formData.get('project_id') as string | null; // Optional
   const due_date = formData.get('due_date') as string | null;
+  const priority = parseTaskPriority(formData.get('priority'));
 
   if (!title || !domain_id) throw new Error("Title and Domain are required");
 
@@ -21,10 +27,11 @@ export async function createTask(formData: FormData) {
     project_id: project_id ? project_id : null, // Send null if empty
     title,
     due_date: due_date ? due_date : null,
+    priority,
   });
 
   if (error) throw new Error(error.message);
-  revalidatePath('/test'); 
+  revalidatePath('/test');
 }
 
 // Special action just for checking off a task!
@@ -39,7 +46,9 @@ export async function toggleTaskComplete(id: string, currentStatus: boolean) {
     .eq('user_id', user.id);
 
   if (error) throw new Error(error.message);
-  revalidatePath('/test');
+  revalidatePath('/tasks');
+  revalidatePath('/dashboard');
+  revalidatePath('/projects');
 }
 
 
@@ -51,7 +60,7 @@ export async function quickCreateTask(formData: FormData) {
   if (!user) throw new Error("Unauthorized");
 
   const title = formData.get('title') as string;
-  const domain_id = formData.get('domain_id') as string; 
+  const domain_id = formData.get('domain_id') as string;
   const input_date = formData.get('due_date') as string; // Catch the new date field
 
   if (!title || !domain_id) throw new Error("Title and Domain are required");
@@ -63,11 +72,12 @@ export async function quickCreateTask(formData: FormData) {
     user_id: user.id,
     domain_id: domain_id,
     title,
-    due_date: final_due_date, 
+    due_date: final_due_date,
+    priority: "medium",
   });
 
   if (error) throw new Error(error.message);
-  revalidatePath('/', 'layout'); 
+  revalidatePath('/', 'layout');
 }
 // ... existing createTask and toggleTaskComplete functions ...
 
@@ -83,7 +93,7 @@ export async function deleteTask(id: string) {
     .eq('user_id', user.id);
 
   if (error) throw new Error(error.message);
-  
+
   revalidatePath('/tasks');
   revalidatePath('/dashboard'); // Keep the dashboard in sync!
   revalidatePath('/projects');  // Keep the project progress bars in sync!

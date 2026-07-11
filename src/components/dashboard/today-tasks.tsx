@@ -34,7 +34,7 @@ export async function TodayTasks() {
               <button className="mt-0.5 shrink-0 text-muted-foreground hover:text-primary">
                 <Circle className="size-4" />
               </button>
-              
+
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-card-foreground">
                   {task.title}
@@ -42,10 +42,12 @@ export async function TodayTasks() {
                 <div className="mt-1 flex items-center gap-2 text-xs">
                   {/* Show Domain Badge */}
                   {task.domains && (
-                    <span 
+                    <span
                       className="rounded-full px-2 py-0.5 text-[10px] font-medium"
-                      // Example inline styling to use the domain's color if stored in DB
-                      style={{ backgroundColor: `${task.domains.color}20`, color: task.domains.color }}
+                      style={{
+                        backgroundColor: `${task.domains.color ?? "#64748b"}20`,
+                        color: task.domains.color ?? "#64748b",
+                      }}
                     >
                       {task.domains.name}
                     </span>

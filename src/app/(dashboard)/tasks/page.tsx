@@ -27,8 +27,29 @@ export default function TasksPage() {
   }
 
   const handleToggle = async (id: string, status: boolean) => {
-    await toggleTaskComplete(id, status);
-    mutate('/api/data/tasks');
+    const previousData = data;
+
+    mutate(
+      '/api/data/tasks',
+      previousData
+        ? {
+            ...previousData,
+            tasks: previousData.tasks.map((task: any) =>
+              task.id === id ? { ...task, is_completed: !status } : task
+            ),
+          }
+        : previousData,
+      false
+    );
+
+    try {
+      await toggleTaskComplete(id, status);
+      mutate('/api/data/tasks');
+      mutate('/api/data/projects');
+    } catch (error) {
+      mutate('/api/data/tasks', previousData, false);
+      console.error('Failed to toggle task:', error);
+    }
   }
 
   const handleDelete = async (id: string) => {
@@ -104,7 +125,7 @@ export default function TasksPage() {
                       <p className={cn('truncate text-sm font-medium', task.is_completed ? 'text-muted-foreground line-through' : 'text-card-foreground')}>{task.title}</p>
                       <div className="mt-1 flex items-center gap-2 text-[10px]">
                         {task.domains && <span className="rounded-full px-2 py-0.5" style={{ backgroundColor: `${task.domains.color}20`, color: task.domains.color }}>{task.domains.name}</span>}
-                        {task.projects && <span className="text-muted-foreground">• {task.projects.name}</span>}
+                        {task.projects && <span className="text-muted-foreground">â€¢ {task.projects.name}</span>}
                         {task.due_date && <span className="flex items-center gap-1 text-muted-foreground"><CalendarClock className="size-3" /> {new Date(task.due_date).toLocaleDateString()}</span>}
                       </div>
                     </div>
