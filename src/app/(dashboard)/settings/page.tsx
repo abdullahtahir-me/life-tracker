@@ -1,7 +1,7 @@
 import { getDomains } from '@/lib/services/domains'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Settings, CalendarDays, Brain, BellDot, RefreshCcw } from 'lucide-react'
+import { CalendarDays, Brain, BellDot, RefreshCcw } from 'lucide-react'
 import { DomainManager } from '@/components/settings/domain-manager'
 
 export default async function SettingsPage() {
@@ -15,10 +15,8 @@ export default async function SettingsPage() {
         <p className="text-sm text-muted-foreground">Manage your core configuration and external integrations.</p>
       </div>
 
-      {/* 1. The Interactive Domain Manager we just built */}
       <DomainManager domains={domains} />
 
-      {/* 2. THE NEW INTEGRATIONS HUB */}
       <div className="space-y-4 pt-6 border-t border-border/50">
         <div>
           <h2 className="text-lg font-semibold px-1">Integrations & Pipelines</h2>
@@ -28,7 +26,6 @@ export default async function SettingsPage() {
         <Card className="border border-border/50 shadow-sm overflow-hidden">
           <div className="divide-y divide-border/50">
             
-            {/* Integration 1: Google Calendar */}
             <div className="p-4 flex items-center justify-between hover:bg-secondary/20 transition-colors">
               <div className="flex items-center gap-4">
                 <div className="p-2.5 bg-blue-500/10 text-blue-500 rounded-lg">
@@ -45,7 +42,6 @@ export default async function SettingsPage() {
               </div>
             </div>
 
-            {/* Integration 2: NLP / Anthropic */}
             <div className="p-4 flex items-center justify-between hover:bg-secondary/20 transition-colors">
               <div className="flex items-center gap-4">
                 <div className="p-2.5 bg-purple-500/10 text-purple-500 rounded-lg">
@@ -66,7 +62,6 @@ export default async function SettingsPage() {
               </div>
             </div>
 
-            {/* Integration 3: Pushover / Native Notifications */}
             <div className="p-4 flex items-center justify-between hover:bg-secondary/20 transition-colors">
               <div className="flex items-center gap-4">
                 <div className="p-2.5 bg-orange-500/10 text-orange-500 rounded-lg">

@@ -9,10 +9,17 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { FolderGit2, Trash2, CheckCircle2, Play, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useHighlightItem } from '@/hooks/use-highlight' // <-- 1. Import the hook
+import { useHighlightItem } from '@/hooks/use-highlight'
+import type { Domain } from '@/lib/types/database'
+import type { ProjectWithStats } from '@/lib/services/projects'
+
+type ProjectsData = {
+  projects: ProjectWithStats[];
+  domains: Domain[];
+};
 
 export default function ProjectsPage() {
-  const { data, isLoading } = useSWR('/api/data/projects', fetcher)
+  const { data, isLoading } = useSWR<ProjectsData>('/api/data/projects', fetcher)
   useHighlightItem(isLoading);
   const handleCreate = async (formData: FormData) => {
     await createProject(formData);
@@ -34,8 +41,8 @@ export default function ProjectsPage() {
 
   if (isLoading) return <div className="flex h-[50vh] items-center justify-center"><Loader2 className="animate-spin text-muted-foreground" /></div>
 
-  const projects = data?.projects || [];
-  const domains = data?.domains || [];
+  const projects = data?.projects ?? [];
+  const domains = data?.domains ?? [];
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 animate-in fade-in duration-300">
@@ -46,7 +53,6 @@ export default function ProjectsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         
-        {/* LEFT: Add Form */}
         <div className="lg:col-span-1">
           <Card className="p-5 sticky top-24 shadow-sm border-border/50">
             <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
@@ -63,7 +69,7 @@ export default function ProjectsPage() {
                 <Label htmlFor="domain_id" className="text-xs">Domain</Label>
                 <select name="domain_id" required className="w-full rounded-md border border-input bg-secondary/20 px-3 py-2 text-sm shadow-sm outline-none focus:border-primary">
                   <option value="">Select Domain...</option>
-                  {domains.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  {domains.map((domain) => <option key={domain.id} value={domain.id}>{domain.name}</option>)}
                 </select>
               </div>
 
@@ -74,7 +80,6 @@ export default function ProjectsPage() {
           </Card>
         </div>
 
-        {/* RIGHT: Cards */}
         <div className="lg:col-span-3">
           {projects.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 border border-dashed rounded-xl text-muted-foreground">
@@ -83,7 +88,7 @@ export default function ProjectsPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {projects.map((project: any) => {
+              {projects.map((project) => {
                 const isCompleted = project.status === 'completed';
 
                 return (

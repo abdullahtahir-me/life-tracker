@@ -1,7 +1,8 @@
 import { getActiveTasks } from "@/lib/services/tasks";
 import { Card } from "@/components/ui/card";
-import { CheckCircle2, ListChecks, Circle } from "lucide-react";
-import { format, isToday, isTomorrow, isPast, parseISO, startOfDay } from "date-fns";
+import { CheckCircle2, ListChecks } from "lucide-react";
+import { TaskCompleteToggle } from "@/components/dashboard/task-complete-toggle";
+import { format, isToday, isTomorrow, isPast, parseISO } from "date-fns";
 
 // Helper function to make dates look human-readable
 function formatTaskDate(dateString: string | null) {
@@ -9,8 +10,6 @@ function formatTaskDate(dateString: string | null) {
   
   // Parse the date safely
   const date = parseISO(dateString);
-  const today = startOfDay(new Date());
-
   if (isToday(date)) return "Today";
   if (isTomorrow(date)) return "Tomorrow";
   if (isPast(date) && !isToday(date)) return "Overdue";
@@ -37,7 +36,7 @@ export async function ActiveTasks() {
       {tasks.length === 0 ? (
         <div className="flex h-32 flex-col items-center justify-center rounded-lg border border-dashed text-muted-foreground">
           <CheckCircle2 className="mb-2 h-6 w-6 text-success" />
-          <p className="text-sm">You're all caught up!</p>
+          <p className="text-sm">You&apos;re all caught up!</p>
         </div>
       ) : (
         <ul className="space-y-3">
@@ -50,9 +49,7 @@ export async function ActiveTasks() {
                 key={task.id}
                 className="flex items-start gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-accent/40"
               >
-                <button className="mt-0.5 shrink-0 text-muted-foreground hover:text-primary">
-                  <Circle className="size-4" />
-                </button>
+                <TaskCompleteToggle taskId={task.id} isCompleted={task.is_completed} />
                 
                 <div className="min-w-0 flex-1">
                   <div className="flex justify-between items-start gap-2">
@@ -73,7 +70,7 @@ export async function ActiveTasks() {
                     {task.domains && (
                       <span 
                         className="rounded-full px-2 py-0.5 text-[10px] font-medium"
-                        style={{ backgroundColor: `${task.domains.color}20`, color: task.domains.color }}
+                        style={{ backgroundColor: `${task.domains.color ?? '#64748b'}20`, color: task.domains.color ?? '#64748b' }}
                       >
                         {task.domains.name}
                       </span>

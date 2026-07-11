@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { X, ListChecks, Users, Wallet, Loader2, Calendar } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import type { Domain } from '@/lib/types/database'
 
 import { quickCreateTask } from '@/lib/actions/task-actions'
 import { quickCreatePerson } from '@/lib/actions/people-actions'
@@ -17,13 +18,12 @@ const types = [
 export function QuickCapture({
   open, onClose, domains = [] 
 }: {
-  open: boolean; onClose: () => void; domains?: any[] 
+  open: boolean; onClose: () => void; domains?: Domain[] 
 }) {
   const [type, setType] = useState('task')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
   
-  // Custom state for the sleek Finance Radio Buttons
   const [txType, setTxType] = useState<'lent' | 'borrowed'>('lent')
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export function QuickCapture({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         formRef.current?.reset();
-        setTxType('lent'); // Reset toggle
+        setTxType('lent');
         onClose();
       }
     }
@@ -57,7 +57,6 @@ export function QuickCapture({
       }
       else if (type === 'finance') {
         formData.set('entity_name', formData.get('inputValue') as string);
-        // Inject the value from our custom radio button state
         formData.set('transaction_type', txType); 
         await addTransaction(formData);
       }
