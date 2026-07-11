@@ -11,12 +11,26 @@ import { ListChecks, Check, Trash2, CalendarClock, AlertCircle, Loader2 } from '
 import { cn } from '@/lib/utils'
 import { useHighlightItem } from '@/hooks/use-highlight' // <-- 1. Import the hook
 
+function getPakistanDateString(date: Date) {
+  return date.toLocaleDateString('en-CA', { timeZone: 'Asia/Karachi' });
+}
+
+function isDueTodayOrTomorrow(dueDate: string | null) {
+  if (!dueDate) return false;
+
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+
+  return dueDate === getPakistanDateString(today) || dueDate === getPakistanDateString(tomorrow);
+}
 export default function TasksPage() {
   const { data, isLoading } = useSWR('/api/data/tasks', fetcher)
   useHighlightItem(isLoading);
   if (isLoading) return <div className="flex h-[50vh] items-center justify-center"><Loader2 className="animate-spin text-muted-foreground" /></div>
 
   const tasks = data?.tasks || [];
+  const sortedTasks = [...tasks].sort((a: any, b: any) => Number(a.is_completed) - Number(b.is_completed));
   const projects = data?.projects || [];
   const domains = data?.domains || [];
 
@@ -113,10 +127,13 @@ export default function TasksPage() {
         <div className="lg:col-span-2">
           <Card className="overflow-hidden">
             <ul className="divide-y divide-border">
-              {tasks.length === 0 ? (
+              {sortedTasks.length === 0 ? (
                 <div className="flex flex-col items-center justify-center p-12 text-muted-foreground"><p>Your task list is empty.</p></div>
               ) : (
-                tasks.map((task: any) => (
+                sortedTasks.map((task: any) => {
+                  const showPriorityAlert = !task.is_completed && isDueTodayOrTomorrow(task.due_date);
+
+                  return (
                   <li key={task.id} id={task.id}  className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-accent/40">
                     <button onClick={() => handleToggle(task.id, task.is_completed)} className={cn('flex size-5 shrink-0 items-center justify-center rounded-md border', task.is_completed ? 'border-success bg-success text-success-foreground' : 'border-input hover:border-ring')}>
                       {task.is_completed && <Check className="size-3.5" strokeWidth={3} />}
@@ -125,14 +142,16 @@ export default function TasksPage() {
                       <p className={cn('truncate text-sm font-medium', task.is_completed ? 'text-muted-foreground line-through' : 'text-card-foreground')}>{task.title}</p>
                       <div className="mt-1 flex items-center gap-2 text-[10px]">
                         {task.domains && <span className="rounded-full px-2 py-0.5" style={{ backgroundColor: `${task.domains.color}20`, color: task.domains.color }}>{task.domains.name}</span>}
-                        {task.projects && <span className="text-muted-foreground">â€¢ {task.projects.name}</span>}
+                        {task.projects && <span className="text-muted-foreground">- {task.projects.name}</span>}
                         {task.due_date && <span className="flex items-center gap-1 text-muted-foreground"><CalendarClock className="size-3" /> {new Date(task.due_date).toLocaleDateString()}</span>}
                       </div>
                     </div>
-                    {task.priority === 'high' && !task.is_completed && <AlertCircle className="size-4 text-destructive shrink-0" />}
+                    {showPriorityAlert && task.priority === 'high' && <AlertCircle className="size-4 text-destructive shrink-0" />}
+                    {showPriorityAlert && task.priority === 'medium' && <AlertCircle className="size-4 text-amber-600 shrink-0" />}
                     <Button variant="ghost" size="icon" onClick={() => handleDelete(task.id)} className="h-8 w-8 text-muted-foreground hover:text-destructive opacity-50 hover:opacity-100"><Trash2 className="size-4" /></Button>
                   </li>
-                ))
+                  );
+                })
               )}
             </ul>
           </Card>
