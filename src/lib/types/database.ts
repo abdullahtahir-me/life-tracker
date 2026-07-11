@@ -41,6 +41,8 @@ export interface Project {
   created_at: string;
 }
 
+export type TaskPriority = "low" | "medium" | "high";
+
 export interface Task {
   id: string;
   user_id: string;
@@ -52,7 +54,7 @@ export interface Task {
   description: string | null;
 
   due_date: string | null;
-  priority: number;
+  priority: TaskPriority;
 
   is_completed: boolean;
 
