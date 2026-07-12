@@ -1,12 +1,25 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css' // <-- This expects globals.css to be in the same src/app folder!
 import { ThemeProvider } from '@/components/theme-provider'
+import { PwaRegistrar } from '@/components/pwa-registrar'
 
 export const metadata: Metadata = {
   title: 'Orbit OS',
   description: 'Personal Command Center',
-  manifest: './manifest.ts',
-  
+  applicationName: 'Orbit OS',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Orbit OS',
+  },
+  icons: {
+    icon: [
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [{ url: '/icon-192.png', sizes: '192x192', type: 'image/png' }],
+  },
 }
 
 export const viewport: Viewport = {
@@ -28,6 +41,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <PwaRegistrar />
           {children}
         </ThemeProvider>
       </body>
