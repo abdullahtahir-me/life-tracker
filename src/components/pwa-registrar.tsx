@@ -4,11 +4,14 @@ import { useEffect } from 'react'
 
 export function PwaRegistrar() {
   useEffect(() => {
-    if (process.env.NODE_ENV !== 'production') {
+    if (!('serviceWorker' in navigator)) {
       return
     }
 
-    if (!('serviceWorker' in navigator)) {
+    if (!window.isSecureContext) {
+      console.warn(
+        'Service worker registration skipped: PWAs require HTTPS or localhost.',
+      )
       return
     }
 
