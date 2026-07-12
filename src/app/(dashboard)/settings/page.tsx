@@ -1,15 +1,33 @@
 'use client'
 
+import { useState } from 'react'
 import useSWR from 'swr'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { CalendarDays, Brain, BellDot, RefreshCcw, Loader2 } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { CalendarDays, Brain, BellDot, RefreshCcw, Loader2, Copy, Check, ExternalLink } from 'lucide-react'
 import { DomainManager } from '@/components/settings/domain-manager'
 import { fetcher } from '@/lib/fetcher'
 import type { Domain } from '@/lib/types/database'
 
+type CalendarLink = {
+  feedUrl: string;
+  webcalUrl: string;
+  googleCalendarUrl: string;
+}
+
 export default function SettingsPage() {
+  const [copiedCalendarUrl, setCopiedCalendarUrl] = useState(false)
   const { data: domains = [], isLoading } = useSWR<Domain[]>('/api/domains', fetcher)
+  const { data: calendarLink, isLoading: isCalendarLinkLoading } = useSWR<CalendarLink>('/api/calendar-link', fetcher)
+
+  const copyCalendarUrl = async () => {
+    if (!calendarLink) return
+
+    await navigator.clipboard.writeText(calendarLink.feedUrl)
+    setCopiedCalendarUrl(true)
+    window.setTimeout(() => setCopiedCalendarUrl(false), 1500)
+  }
 
   return (
     <div className="mx-auto max-w-5xl space-y-10 pb-10">
@@ -34,7 +52,7 @@ export default function SettingsPage() {
 
         <Card className="border border-border/50 shadow-sm overflow-hidden">
           <div className="divide-y divide-border/50">
-            <div className="p-4 flex items-center justify-between hover:bg-secondary/20 transition-colors">
+            <div className="p-4 space-y-4 hover:bg-secondary/20 transition-colors">
               <div className="flex items-center gap-4">
                 <div className="p-2.5 bg-blue-500/10 text-blue-500 rounded-lg">
                   <CalendarDays className="size-5" />
@@ -44,9 +62,38 @@ export default function SettingsPage() {
                   <p className="text-xs text-muted-foreground">One-way push for tasks with due dates.</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-medium text-muted-foreground bg-secondary px-2 py-1 rounded-md">Disconnected</span>
-                <Button variant="outline" size="sm">Connect</Button>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:pl-[58px]">
+                <Input
+                  readOnly
+                  value={calendarLink?.feedUrl ?? ''}
+                  placeholder={isCalendarLinkLoading ? 'Loading calendar URL...' : 'Calendar URL unavailable'}
+                  className="font-mono text-xs"
+                />
+                <div className="flex shrink-0 items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-sm"
+                    aria-label="Copy calendar URL"
+                    onClick={copyCalendarUrl}
+                    disabled={!calendarLink}
+                  >
+                    {copiedCalendarUrl ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    disabled={!calendarLink}
+                    onClick={() => {
+                      if (calendarLink) window.open(calendarLink.googleCalendarUrl, '_blank', 'noopener,noreferrer')
+                    }}
+                  >
+                    <ExternalLink className="size-3.5" />
+                    Connect
+                  </Button>
+                </div>
               </div>
             </div>
 

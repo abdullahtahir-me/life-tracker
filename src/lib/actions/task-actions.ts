@@ -8,6 +8,38 @@ function parseTaskPriority(value: FormDataEntryValue | null): TaskPriority {
   return value === "low" || value === "medium" || value === "high" ? value : "medium";
 }
 
+async function assertDomainBelongsToUser(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  domainId: string,
+  userId: string,
+) {
+  const { data, error } = await supabase
+    .from('domains')
+    .select('id')
+    .eq('id', domainId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Invalid domain");
+}
+
+async function assertProjectBelongsToUser(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  projectId: string,
+  userId: string,
+) {
+  const { data, error } = await supabase
+    .from('projects')
+    .select('id')
+    .eq('id', projectId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Invalid project");
+}
+
 export async function createTask(formData: FormData) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -20,6 +52,8 @@ export async function createTask(formData: FormData) {
   const priority = parseTaskPriority(formData.get('priority'));
 
   if (!title || !domain_id) throw new Error("Title and Domain are required");
+  await assertDomainBelongsToUser(supabase, domain_id, user.id);
+  if (project_id) await assertProjectBelongsToUser(supabase, project_id, user.id);
 
   const { error } = await supabase.from('tasks').insert({
     user_id: user.id,
@@ -65,6 +99,7 @@ export async function quickCreateTask(formData: FormData) {
   const input_date = formData.get('due_date') as string; // Catch the new date field
 
   if (!title || !domain_id) throw new Error("Title and Domain are required");
+  await assertDomainBelongsToUser(supabase, domain_id, user.id);
 
   // If a date is provided, use it. Otherwise, default to today in Pakistan time.
   const final_due_date = input_date || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Karachi' });

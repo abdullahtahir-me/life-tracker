@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { verifyCalendarToken } from "@/lib/calendar-token";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -7,11 +8,20 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 // Helper to get the current time in the exact format calendars require
 const getIcsTimestamp = () => new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
+function escapeIcsText(value: string) {
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\r?\n/g, '\\n');
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const token = searchParams.get("token");
+  const userId = verifyCalendarToken(token);
 
-  if (token !== process.env.CALENDAR_SYNC_TOKEN) {
+  if (!userId) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
@@ -22,6 +32,7 @@ export async function GET(request: Request) {
   const { data: tasks, error: tasksError } = await supabase
     .from("tasks")
     .select("id, title, due_date")
+    .eq("user_id", userId)
     .eq("is_completed", false)
     .gte("due_date", today);
 
@@ -54,7 +65,7 @@ export async function GET(request: Request) {
       icsString += [
         'BEGIN:VEVENT',
         `UID:${task.id}`,
-        `SUMMARY:[Task] ${task.title}`,
+        `SUMMARY:${escapeIcsText(`[Task] ${task.title}`)}`,
         `DTSTAMP:${getIcsTimestamp()}`,
         `DTSTART;VALUE=DATE:${startStr}`,    // E.g., 20260711
         `DTEND;VALUE=DATE:${endStr}`,        // E.g., 20260712
@@ -72,6 +83,7 @@ export async function GET(request: Request) {
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
       "Content-Disposition": 'attachment; filename="orbit_schedule.ics"',
+      "Cache-Control": "private, no-store",
     },
   });
 }

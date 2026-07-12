@@ -28,6 +28,7 @@ export async function getTasks(): Promise<TaskWithRelations[]> {
       domains(name, color),
       projects(name)
     `)
+    .eq('user_id', user.id)
     .order('due_date', { ascending: true });
 
   if (error) {

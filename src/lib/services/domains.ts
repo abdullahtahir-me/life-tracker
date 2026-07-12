@@ -13,6 +13,7 @@ export async function getDomains(): Promise<Domain[]> {
   const { data, error } = await supabase
     .from('domains')
     .select('*')
+    .eq('user_id', user.id)
     .order('created_at', { ascending: true });
 
   if (error) {

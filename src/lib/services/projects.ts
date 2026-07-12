@@ -56,6 +56,7 @@ export async function getProjects(): Promise<Project[]> {
   const { data, error } = await supabase
     .from('projects')
     .select('*, domains(name, color)')
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false });
   if (error) {
     console.error("Error fetching projects:", error.message);
