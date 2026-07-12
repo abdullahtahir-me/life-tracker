@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import useSWR from 'swr'
 
 import { QuickCapture } from '@/components/layout/quick-capture'
@@ -16,6 +16,18 @@ const QuickCaptureContext = createContext<QuickCaptureContextType>({ openCapture
 export function QuickCaptureProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false)
   const { data: domains = [] } = useSWR<Domain[]>('/api/domains', fetcher)
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === 'c' && e.altKey) {
+        e.preventDefault()
+        setIsOpen((open) => !open)
+      }
+    }
+
+    document.addEventListener('keydown', down)
+    return () => document.removeEventListener('keydown', down)
+  }, [])
 
   return (
     <QuickCaptureContext.Provider value={{ openCapture: () => setIsOpen(true) }}>
