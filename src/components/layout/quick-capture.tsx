@@ -10,9 +10,9 @@ import { quickCreatePerson } from '@/lib/actions/people-actions'
 import { addTransaction } from '@/lib/actions/finance-actions' 
 
 const types = [
-  { key: 'task', label: 'Task', icon: ListChecks },
-  { key: 'contact', label: 'Contact', icon: Users },
-  { key: 'finance', label: 'Finance', icon: Wallet },
+  { key: 'task', label: 'Task', icon: ListChecks, shortcut: '1' },
+  { key: 'contact', label: 'Contact', icon: Users, shortcut: '2' },
+  { key: 'finance', label: 'Finance', icon: Wallet, shortcut: '3' },
 ]
 
 export function QuickCapture({
@@ -33,6 +33,15 @@ export function QuickCapture({
         formRef.current?.reset();
         setTxType('lent');
         onClose();
+      } else if (e.altKey && e.key === '1') {
+        e.preventDefault();
+        setType('task');
+      } else if (e.altKey && e.key === '2') {
+        e.preventDefault();
+        setType('contact');
+      } else if (e.altKey && e.key === '3') {
+        e.preventDefault();
+        setType('finance');
       }
     }
     window.addEventListener('keydown', onKey)
@@ -99,9 +108,13 @@ export function QuickCapture({
                     'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
                     isActive ? 'border-primary bg-primary/15 text-primary scale-105 shadow-sm' : 'border-border text-muted-foreground hover:text-foreground',
                   )}
+                  title={`Alt+${t.shortcut}`}
                 >
                   <Icon className="size-3.5" />
                   {t.label}
+                  <span className={cn("text-[10px] ml-0.5 opacity-60", isActive ? "text-primary" : "text-muted-foreground")}>
+                    {t.shortcut}
+                  </span>
                 </button>
               )
             })}

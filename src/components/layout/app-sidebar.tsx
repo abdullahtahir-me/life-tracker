@@ -3,7 +3,8 @@
 import { LayoutDashboard, FolderGit2, ListChecks, Users, Wallet, Orbit, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useRef } from 'react'
 
 // --- SWR PREFETCH IMPORTS ---
 import { preload } from 'swr'
@@ -19,6 +20,77 @@ const items = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const sequenceRef = useRef('');
+
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+        return;
+      } else if (e.key === 'Enter') {
+        const active = document.activeElement as HTMLElement;
+        
+        // Let Shift+Enter keep normal newlines in textareas
+        if (active?.tagName === 'TEXTAREA' && e.shiftKey) {
+          return;
+        }
+
+        const form = active?.closest('form');
+        if (form) {
+          e.preventDefault();
+          if (typeof form.requestSubmit === 'function') {
+            form.requestSubmit();
+          } else {
+            form.submit();
+          }
+        }
+      }
+
+      if (
+        document.activeElement?.tagName === 'INPUT' ||
+        document.activeElement?.tagName === 'TEXTAREA' ||
+        (document.activeElement as HTMLElement)?.isContentEditable
+      ) {
+        return;
+      }
+
+      sequenceRef.current += e.key.toLowerCase();
+      const seq = sequenceRef.current;
+
+      if (seq.endsWith('gd')) {
+        router.push('/dashboard');
+        sequenceRef.current = '';
+      } else if (seq.endsWith('gp')) {
+        router.push('/projects');
+        sequenceRef.current = '';
+      } else if (seq.endsWith('gt')) {
+        router.push('/tasks');
+        sequenceRef.current = '';
+      } else if (seq.endsWith('gc')) {
+        router.push('/network');
+        sequenceRef.current = '';
+      } else if (seq.endsWith('gf')) {
+        router.push('/finances');
+        sequenceRef.current = '';
+      }
+
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        sequenceRef.current = '';
+      }, 1000);
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      clearTimeout(timeout);
+    };
+  }, [router]);
 
   // --- THE PREFETCH FUNCTION ---
   const handlePrefetch = (apiRoute: string) => {
