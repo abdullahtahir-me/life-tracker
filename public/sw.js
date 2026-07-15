@@ -1,4 +1,4 @@
-const CACHE_NAME = 'orbit-os-pwa-v1'
+const CACHE_NAME = 'orbit-os-pwa-v2'
 const PRECACHE_URLS = [
   '/offline.html',
   '/icon-192.png',
@@ -42,13 +42,59 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  if (
-    url.pathname.startsWith('/_next/static/') ||
-    url.pathname === '/icon-192.png' ||
-    url.pathname === '/icon-512.png'
-  ) {
+  if (url.pathname.startsWith('/_next/')) {
+    return
+  }
+
+  if (url.pathname === '/icon-192.png' || url.pathname === '/icon-512.png') {
     event.respondWith(cacheFirst(request))
   }
+})
+
+self.addEventListener('push', (event) => {
+  let payload = {
+    title: 'Orbit OS',
+    body: 'You have a new notification.',
+    url: '/',
+  }
+
+  if (event.data) {
+    try {
+      payload = { ...payload, ...event.data.json() }
+    } catch {
+      payload.body = event.data.text()
+    }
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      data: { url: payload.url || '/' },
+    }),
+  )
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+
+  const targetUrl = new URL(event.notification.data?.url || '/', self.location.origin)
+  const normalizedTarget = targetUrl.href
+
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList) => {
+        for (const client of clientList) {
+          if (client.url === normalizedTarget && 'focus' in client) {
+            return client.focus()
+          }
+        }
+
+        return self.clients.openWindow(normalizedTarget)
+      }),
+  )
 })
 
 async function cacheFirst(request) {

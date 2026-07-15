@@ -5,8 +5,9 @@ import useSWR from 'swr'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { CalendarDays, Brain, BellDot, RefreshCcw, Loader2, Copy, Check, ExternalLink } from 'lucide-react'
+import { CalendarDays, Brain, RefreshCcw, Loader2, Copy, Check, ExternalLink } from 'lucide-react'
 import { DomainManager } from '@/components/settings/domain-manager'
+import { PushNotificationSettings } from '@/components/settings/push-notification-settings'
 import { fetcher } from '@/lib/fetcher'
 import type { Domain } from '@/lib/types/database'
 
@@ -117,21 +118,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="p-4 flex items-center justify-between hover:bg-secondary/20 transition-colors">
-              <div className="flex items-center gap-4">
-                <div className="p-2.5 bg-orange-500/10 text-orange-500 rounded-lg">
-                  <BellDot className="size-5" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-sm">Pushover Notifications</h3>
-                  <p className="text-xs text-muted-foreground">Native iOS/Android alerts for urgent tasks.</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-medium text-muted-foreground bg-secondary px-2 py-1 rounded-md">API Key Missing</span>
-                <Button variant="outline" size="sm">Configure</Button>
-              </div>
-            </div>
+            <PushNotificationSettings />
           </div>
         </Card>
       </div>
