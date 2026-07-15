@@ -74,6 +74,40 @@ create policy "Users can delete their push subscriptions"
   using (auth.uid() = user_id);
 ```
 
+Create the delivery log used to avoid repeated task reminders:
+
+```sql
+create table if not exists public.push_notification_deliveries (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  notification_type text not null,
+  notification_date date not null,
+  created_at timestamptz not null default now(),
+  unique (user_id, notification_type, notification_date)
+);
+
+alter table public.push_notification_deliveries enable row level security;
+```
+
+Task reminder pushes are sent by calling the cron endpoint:
+
+```bash
+curl -X POST https://your-domain.com/api/push/tasks \
+  -H "Authorization: Bearer your_cron_secret"
+```
+
+Add one of these server environment variables for the endpoint secret:
+
+```bash
+TASK_REMINDER_SECRET=your_cron_secret
+# or
+CRON_SECRET=your_cron_secret
+```
+
+The endpoint sends one daily due-soon summary for incomplete tasks due today or
+tomorrow, and one daily missed-task summary for incomplete tasks overdue before
+today. Dates are evaluated in `Asia/Karachi`.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
