@@ -1,24 +1,33 @@
 import webpush, { type PushSubscription } from 'web-push'
 
-const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-const privateKey = process.env.VAPID_PRIVATE_KEY
-const subject = process.env.VAPID_SUBJECT ?? 'mailto:admin@example.com'
-
 let configured = false
+let configuredPublicKey: string | undefined
+
+function getVapidConfig() {
+  return {
+    publicKey:
+      process.env.VAPID_PUBLIC_KEY ?? process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+    privateKey: process.env.VAPID_PRIVATE_KEY,
+    subject: process.env.VAPID_SUBJECT ?? 'mailto:admin@example.com',
+  }
+}
 
 export function getVapidPublicKey() {
-  return publicKey
+  return getVapidConfig().publicKey
 }
 
 export function configureWebPush() {
-  if (configured) return
+  const { publicKey, privateKey, subject } = getVapidConfig()
 
   if (!publicKey || !privateKey) {
     throw new Error('Missing VAPID keys')
   }
 
+  if (configured && configuredPublicKey === publicKey) return
+
   webpush.setVapidDetails(subject, publicKey, privateKey)
   configured = true
+  configuredPublicKey = publicKey
 }
 
 export type WebPushPayload = {

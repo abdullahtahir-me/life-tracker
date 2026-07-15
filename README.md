@@ -27,10 +27,14 @@ npx web-push generate-vapid-keys
 Add these environment variables:
 
 ```bash
-NEXT_PUBLIC_VAPID_PUBLIC_KEY=your_public_key
+VAPID_PUBLIC_KEY=your_public_key
 VAPID_PRIVATE_KEY=your_private_key
 VAPID_SUBJECT=mailto:you@example.com
 ```
+
+`NEXT_PUBLIC_VAPID_PUBLIC_KEY` is still supported for existing deployments, but
+new deployments should use `VAPID_PUBLIC_KEY` so the API route reads the key from
+the server environment at runtime.
 
 Create the Supabase table used for browser subscriptions:
 

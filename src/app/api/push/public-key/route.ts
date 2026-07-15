@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getVapidPublicKey } from '@/lib/notifications/web-push'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
   const publicKey = getVapidPublicKey()
@@ -13,5 +14,8 @@ export async function GET() {
     )
   }
 
-  return NextResponse.json({ publicKey })
+  return NextResponse.json(
+    { publicKey },
+    { headers: { 'Cache-Control': 'no-store' } },
+  )
 }
